@@ -252,6 +252,10 @@ export async function handleInterconnectMessage(msg) {
         sendInterconnectData({ type: 'DEVICEINFO', status: 'OK', data: device || {} })
         break
       }
+      case 'GET_FETCHAVA': {
+        sendInterconnectData({ type: 'FETCHAVA', status: 'OK', data: global.fetchAva || {} })
+        break
+      }
 
       // PUT 请求
       case 'PUT_SETTINGS': {
