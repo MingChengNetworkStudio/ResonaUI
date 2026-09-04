@@ -59,23 +59,6 @@ function ensureDir(uri) {
 }
 
 /**
- * 将通过互联传入的数据解码为 Uint8Array
- * 互联走 JSON，二进制以 base64 字符串传输；兼容 data URI 和已是 Uint8Array 的情况
- * 注意：file.writeArrayBuffer 的 buffer 参数要求 Uint8Array（非 ArrayBuffer）
- */
-function decodeBuffer(data) {
-  if (typeof data !== 'string') return data
-  let str = data
-  const comma = str.indexOf(',')
-  if (str.startsWith('data:') && comma >= 0) str = str.substring(comma + 1)
-  const binary = crypto.atob(str)
-  const len = binary.length
-  const bytes = new Uint8Array(len)
-  for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i)
-  return bytes
-}
-
-/**
  * 初始化设备通信
  */
 export function initInterconnect() {
@@ -266,20 +249,7 @@ export async function handleInterconnectMessage(msg) {
       }
       case 'UPLOAD_FILE': {
         try {
-          if (!data?.uri) throw new Error('缺少 uri')
-          if (!data?.data) throw new Error('缺少 data')
-          const bytes = decodeBase64(data.data)
-          await ensureDir(data.uri)
-          await new Promise((resolve, reject) => {
-            file.writeArrayBuffer({
-              uri: data.uri,
-              buffer: bytes,
-              append: data.append,
-              position: data.position,
-              success: resolve,
-              fail: (d, code) => reject(`写入失败: ${code}`)
-            })
-          })
+          await uploadFile(data)
           sendInterconnectData({ type: 'UPLOAD_FILE_DONE', status: 'OK', data: { uri: data.uri } })
         } catch (e) {
           sendInterconnectData({ type: 'UPLOAD_FILE_DONE', status: e.toString(), data: { uri: data?.uri } })
@@ -311,4 +281,20 @@ export async function handleInterconnectMessage(msg) {
     console.log('[设备通信] 处理消息异常:', e)
     global.uiAdm.MessageBox('[E]处理消息异常')
   }
+}
+export async function uploadFile(data){
+  if (!data?.uri) throw new Error('缺少 uri')
+  if (!data?.data) throw new Error('缺少 data')
+  const bytes = decodeBase64(data.data)
+  await ensureDir(data.uri)
+  await new Promise((resolve, reject) => {
+    file.writeArrayBuffer({
+      uri: data.uri,
+      buffer: bytes,
+      append: data.append,
+      position: data.position,
+      success: resolve,
+      fail: (d, code) => reject(`写入失败: ${code}`)
+    })
+  })
 }

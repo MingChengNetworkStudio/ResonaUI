@@ -8,7 +8,7 @@
  * @license     AGPL-3.0-only
  ******************************************************************************/
 
-import { sendInterconnectData } from './interconnect.js'
+import { sendInterconnectData, uploadFile } from './interconnect.js'
 import { getDeviceInfo } from './useful.js'
 import crypto from '@system.crypto'
 
@@ -26,6 +26,7 @@ let _handshakeResolve = null
 let _handshakeInFlight = null
 const _pending = new Map()
 const _sseHandlers = new Map()
+const _downloadPending = new Map()
 
 // ===== 工具函数 =====
 
@@ -181,10 +182,59 @@ export function sse(options) {
 }
 
 /**
+ * 通过SF通道下载文件
+ * @param {Object} config 下载配置
+ * @param {string} config.url 下载地址
+ * @param {string} [config.filename] 下载文件名
+ * @param {Object} [config.header={}] 请求头
+ * @param {string} [config.uri] SF扩展：目标路径，分片直接写入此路径
+ * @param {Function} [config.success] 成功返回 { token } 的回调
+ * @param {Function} [config.fail] 启动失败的回调
+ * @param {Function} [config.complete] 结束回调
+ */
+export function download(config) {
+  const { url, filename, header = {}, uri, success, fail, complete } = config
+  const id = _nextId()
+
+  if (!_bridgeActive) {
+    if (fail) fail('桥接未连接', 0)
+    if (complete) complete()
+    return
+  }
+
+  _downloadPending.set(id, { id, uri, success, fail, complete })
+
+  // 立即返回 token（id 即为 token，与原生 request.download 行为一致）
+  if (success) success({ token: id })
+
+  // 通知手机端开始下载
+  sendInterconnectData({
+    type: 'SF_DOWNLOAD',
+    data: { id, url, headers: header, filename }
+  })
+}
+
+/**
+ * 模拟 @system.request.onDownloadComplete：注册下载完成回调
+ * @param {Object} config
+ * @param {string} config.token 任务 token（即 download 返回的 id）
+ * @param {Function} [config.success] 成功返回 { uri } 的回调
+ * @param {Function} [config.fail] 失败的回调
+ * @param {Function} [config.complete] 结束回调
+ */
+export function onDownloadComplete(config) {
+  const { token, success, fail, complete } = config
+  const task = _downloadPending.get(token)
+  if (task) {
+    task.onDownloadComplete = { success, fail, complete }
+  }
+}
+
+/**
  * 处理SF_开头的互联消息（由interconnect.js调用）
  * @param {Object} msg 消息对象 { type, status, data }
  */
-export function handleMessage(msg) {
+export async function handleMessage(msg) {
   const { type, status, data } = msg
 
   if (type === 'SF_HANDSHAKE') {
@@ -300,6 +350,62 @@ export function handleMessage(msg) {
     }
     return
   }
+
+  if (type === 'SF_DL_RESPONSE') {
+    const { id, append, isLast, data: body } = data
+    if (!id) return
+    const task = _downloadPending.get(id)
+    if (!task) {
+      console.log('[SimpleFetch] 收到未知下载分片, id:', id)
+      return
+    }
+    if (!body) {
+      _failDownloadTask(task, 0, '手机端未返回文件内容')
+      return
+    }
+    await uploadFile({ uri: task.uri ,data: body, append:append})
+    if (isLast) _completeDownloadTask(task, task.uri)
+    return
+  }
+
+  if (type === 'SF_DL_FAIL') {
+    const { id } = data
+    if (!id) return
+    const task = _downloadPending.get(id)
+    if (!task) return
+    _failDownloadTask(task, 0, status || data.message || '下载失败')
+    return
+  }
+}
+
+/**
+ * 下载成功完成：触发 onDownloadComplete 的 success 回调
+ * @param {Object} task 任务状态
+ * @param {string} uri 目标路径
+ */
+function _completeDownloadTask(task, uri) {
+  _downloadPending.delete(task.id)
+  if (task.onDownloadComplete) {
+    if (task.onDownloadComplete.success) task.onDownloadComplete.success({ uri })
+    if (task.onDownloadComplete.complete) task.onDownloadComplete.complete()
+  }
+}
+
+/**
+ * 下载失败：触发 onDownloadComplete 的 fail 回调
+ * @param {Object} task 任务状态
+ * @param {number} code 错误码
+ * @param {string} message 错误信息
+ */
+function _failDownloadTask(task, code, message) {
+  _downloadPending.delete(task.id)
+  if (task.onDownloadComplete) {
+    if (task.onDownloadComplete.fail) task.onDownloadComplete.fail(message, code)
+    if (task.onDownloadComplete.complete) task.onDownloadComplete.complete()
+  } else {
+    if (task.fail) task.fail(message, code)
+    if (task.complete) task.complete()
+  }
 }
 
 /**
@@ -395,6 +501,18 @@ export function deactivateBridge() {
     if (sse.handlers.onError) sse.handlers.onError('桥接连接断开')
   })
   _sseHandlers.clear()
+  // 通知所有挂起的下载（已注册 onDownloadComplete 的走 onDownloadComplete.fail，否则走 download.fail）
+  _downloadPending.forEach((task) => {
+    const msg = '桥接连接断开'
+    if (task.onDownloadComplete) {
+      if (task.onDownloadComplete.fail) task.onDownloadComplete.fail(msg, 0)
+      if (task.onDownloadComplete.complete) task.onDownloadComplete.complete()
+    } else {
+      if (task.fail) task.fail(msg, 0)
+      if (task.complete) task.complete()
+    }
+  })
+  _downloadPending.clear()
   // 刷新设备信息
   getDeviceInfo()
   global.uiAdm.MessageBox('桥接网络已断开')
