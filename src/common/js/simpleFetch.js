@@ -3,7 +3,7 @@
  * @description SimpleFetch模块 - 通过互联通道代理网络请求
  * @author      B4QAQ
  * @source      ResonaUI
- * @version     1.1
+ * @version     1.2
  * @copyright   2026 B4QAQ@MCNS.
  * @license     AGPL-3.0-only
  ******************************************************************************/
@@ -60,6 +60,27 @@ function _parseBody(body, responseType, headers) {
   return body
 }
 
+/**
+ * 构造请求头：对齐原生 @system.fetch 行为，当带请求体却没有声明 Content-Type 时
+ * 按内容补全默认值（对象/JSON 字符串用 application/json），避免服务端无法解析 body。
+ * @param {Object} header 调用方传入的请求头
+ * @param {string|null} body 已序列化的请求体字符串
+ * @return {Object} 新的请求头对象（不修改入参）
+ */
+function _buildHeaders(header, body) {
+  const h = Object.assign({}, header || {})
+  if (body !== null && body !== undefined) {
+    const hasCT = Object.keys(h).some(k => k.toLowerCase() === 'content-type')
+    if (!hasCT) {
+      const first = String(body).replace(/^\s+/, '').charAt(0)
+      h['Content-Type'] = (first === '{' || first === '[')
+        ? 'application/json;charset=UTF-8'
+        : 'application/x-www-form-urlencoded'
+    }
+  }
+  return h
+}
+
 // 激活桥接：设置状态并启动心跳
 function _activateBridge() {
   global.NetworkStatus = 'bridge'
@@ -111,7 +132,8 @@ function _stopHeartbeat() {
  * @return {Promise<Object>} 响应 { data: { code, data, headers } }（与 @system.fetch Promise 一致）
  */
 export function fetch(config) {
-  const { url, method = 'GET', header = {}, data = null, responseType, timeout = 15000 } = config
+  const { url, header = {}, data = null, responseType, timeout = 15000 } = config
+  const method = (config.method || 'GET').toUpperCase()
   const id = _nextId()
 
   // 将data转为body字符串
@@ -119,6 +141,8 @@ export function fetch(config) {
   if (data !== null) {
     body = typeof data === 'string' ? data : JSON.stringify(data)
   }
+  // 对齐原生 fetch：带 body 时补全 Content-Type
+  const headers = _buildHeaders(header, body)
 
   return new Promise((resolve, reject) => {
     if (!_bridgeActive) {
@@ -134,7 +158,7 @@ export function fetch(config) {
     _pending.set(id, { resolve, reject, timer, responseType })
     sendInterconnectData({
       type: 'SF_REQUEST',
-      data: { id, url, method, headers: header, body, sse: false, timeout }
+      data: { id, url, method, headers, body, sse: false, timeout }
     })
   })
 }
@@ -489,6 +513,7 @@ export function deactivateBridge() {
   _stopHeartbeat()
   _bridgeActive = false
   global.NetworkStatus = 'none'
+  global.fetchAva = false
   // reject所有待处理请求
   _pending.forEach((p) => {
     clearTimeout(p.timer)
