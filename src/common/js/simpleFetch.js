@@ -5,7 +5,7 @@
  * @source      ResonaUI
  * @version     1.2
  * @copyright   2026 B4QAQ@MCNS.
- * @license     AGPL-3.0-only
+ * @license     MIT
  ******************************************************************************/
 
 import { sendInterconnectData, uploadFile } from './interconnect.js'

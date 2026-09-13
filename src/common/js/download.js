@@ -2,7 +2,7 @@
  * @file        download.js
  * @description 多线程文件下载
  * @author      B4QAQ
- * @source      Eternal
+ * @source      ResonaUI
  * @version     1.0
  * @copyright   2026 B4QAQ@MCNS.
  * @license     MPL-2.0-only

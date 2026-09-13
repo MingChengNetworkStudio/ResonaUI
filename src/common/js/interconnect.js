@@ -5,7 +5,7 @@
  * @source      ResonaUI
  * @version     1.0
  * @copyright   2026 B4QAQ@MCNS.
- * @license     AGPL-3.0-only
+ * @license     MIT
  ******************************************************************************/
 
 import interconnect from '@system.interconnect'

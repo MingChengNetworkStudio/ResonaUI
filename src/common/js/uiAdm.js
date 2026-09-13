@@ -5,7 +5,7 @@
  * @source      ResonaUI
  * @version     1.5
  * @copyright   2026 B4QAQ@MCNS.
- * @license     AGPL-3.0-only
+ * @license     MPL-2.0-only
  ******************************************************************************/
 
 import prompt from '@system.prompt'

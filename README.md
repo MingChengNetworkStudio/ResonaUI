@@ -221,9 +221,9 @@ console.log(info.product)        // 设备代号
 
 ## 📄 许可证
 
-本项目采用 [AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.html) 许可证。
+本项目采用 [MIT](https://opensource.org/licenses/MIT) 许可证。
 
-**common/** 目录下的核心模块（uiAdm.js、storage.js、fetch.js、useful.js）均为 AGPL-3.0 协议。
+**common/** 目录下的核心模块均采用 MIT 协议；仅 [download.js](src/common/js/download.js)（多线程文件下载）采用 MPL-2.0-only 协议。
 
 ---
 

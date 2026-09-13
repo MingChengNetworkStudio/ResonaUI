@@ -2,6 +2,7 @@
   "name": "ResonaUI",
   "version": "1.0.0",
   "description": "",
+  "license": "MIT",
   "engines": {
     "node": ">=8.10"
   },
