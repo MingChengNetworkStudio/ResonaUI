@@ -161,19 +161,9 @@ set: [
 
 手机端配套的 AstroBox 插件与接入文档见 [B4QAQ/SimpleFetch-AstroBoxV2-Plugins](https://github.com/B4QAQ/SimpleFetch-AstroBoxV2-Plugins)。
 
-## 🔨 构建部署
+## 🔨 构建
 
-### 开发构建
-
-```bash
-pnpm build
-```
-
-### 发布构建
-
-```bash
-pnpm release
-```
+使用aiotIDE构建
 
 产物输出到 `dist/` 目录。
 
@@ -221,9 +211,8 @@ console.log(info.product)        // 设备代号
 
 ## 📄 许可证
 
-本项目采用 [MIT](https://opensource.org/licenses/MIT) 许可证。
-
-**common/** 目录下的核心模块均采用 MIT 协议；仅 [download.js](src/common/js/download.js)（多线程文件下载）采用 MPL-2.0-only 协议。
+本项目采用 [MIT](https://opensource.org/licenses/MIT) 许可证。  
+仅 [download.js](src/common/js/download.js)与[uiAdm.js](src/common/js/uiAdm.js)采用 MPL-2.0-only 协议。
 
 ---
 
