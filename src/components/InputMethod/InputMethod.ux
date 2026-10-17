@@ -1,240 +1,157 @@
 <template>
-  <div class="page" style="flex-direction: column;" show="{{!hide}}">
-    <div style="background-color:black" >
-      <!-- 圆屏62 -->
-      <div if="{{screentype==='circle'}}" style="width: 480px;height: 321px;">
-        <!-- 全键盘 -->
-        <div if="{{keyboardtype!='T9'}}" style="width: 480px;height: 321px;">
-          <!-- 数字模式工具栏：返回、换行、cursor -->
-          <img src="./assets/full/back2.png" style="position: absolute;top:38px;left:38px;width:256px;height:52px;" @click="onBtnClick('switchCn')" show="{{numFlag}}"/>
-          <img src="./assets/full/newline.png" style="position: absolute;top:38px;left:310px;width:52px;height:52px;" @click="onBtnClick('newline')" show="{{numFlag}}" />
-          <img src="./assets/full/crusor.png" style="position: absolute;top:38px;left:378px;width:52px;height:52px;" @click="onBtnClick('switchCursor')" show="{{numFlag}}" />
-          <img src="./assets/full/123.png" style="position: absolute;top:266px;left:119px;width:120px;height:48px;" @click="onBtnClick('switchNum')" show="{{downFlag==='' && !numFlag && lang==='cn'}}" />
-          <img src="./assets/full/bigA.png" style="position: absolute;top:266px;left:119px;width:120px;height:48px;" @click="onBtnClick('switchLow')" show="{{downFlag==='' && upperFlag && lang==='en' && !cursorFlag}}" />
-          <img src="./assets/full/A.png" style="position: absolute;top:266px;left:119px;width:120px;height:48px;" @click="onBtnClick('switchUpper')" show="{{downFlag==='' && !upperFlag && lang==='en' && !cursorFlag}}" />
-          <div style="position: absolute;top:38px;left:78px;width:324px;height:52px;background-color:rgb(38,38,38);border-radius: 12px;border: 3px solid #333333" show="{{downFlag===''&& !numFlag}}"></div>
-          <img show="{{resultList.length > 0}}" style="position: absolute;top:43px;left:355px;" src="./assets/full/down.png" @click="onBtnClick('down')" />
-          <!-- 带变量的相对路径在 aiot-tookit 2.0.4 中修复 -->
-          <img src="./assets/full/{{lang}}.png" style="position: absolute;top:38px;left:7px;width:67px;height:52px;" @click="onBtnClick('lang')" show="{{downFlag==='' && !numFlag}}" />
-          <div style="position: absolute;top:-4px;left:78px;width:324px;" show="{{downFlag==='' && !numFlag && cval}}">
-            <text class="caltext" style="width:296px;"> {{cval}}_ </text>
-          </div>
-          <div style="position: absolute;top:38px;left:80px;width:277px" show="{{lang === 'cn'&& !numFlag}}">
-            <div class="item column center" for="{{cvalList}}">
-              <input show='{{resultList.length > $idx}}' class="calbtn0" type="button" value="{{resultList[$idx]}}" @click="onRsSelect(resultList[$idx])" />
-            </div>
-          </div>
-          <div style="position: absolute;top:38px;left:80px;width:320px;height:52px;align-content: center;align-items: center;justify-content: center" show="{{downFlag==='' && !numFlag && lang==='en'}}" @click="onBtnClick('switchNum')" >
-            <img src="./assets/full/123_boardless.png" />
-          </div>
-          <!-- 这里使用show会导致每次输入都会加载全部候选列表，很卡 -->
-          <list class="list3" if="{{downFlag==='down'}}">
-            <list-item type="waitingRows62t9" class="item3" for="{{itemArray in resultList2}}">
-              <div class="item column center" style="height:52px;" for="{{item in itemArray}}">
-                <input class="calbtn0" type="button" value="{{item}}" @click="onRsSelect(item)" />
+  <div class="page fd" show="{{!hide}}">
+    <div style="background-color:black">
+      <div if="{{screentype==='circle' && circlemode==='normal'}}" class="fd" style="width:480px;height:321px;position:relative">
+        <!-- 顶部工具栏：外层 div 按键(.sbtn) + 内层 img 按比例 contain -->
+        <div class="fr" style="align-items:center;padding:38px 7px 0px 7px">
+          <div class="sbtn" if="{{downFlag==='' && !numFlag}}" @click="onBtnClick('lang')"><img class="kico" src="./assets/arc/{{lang}}.png" /></div>
+          <div class="sbtn mgl6" if="{{numFlag}}" @click="onBtnClick('switchCn')"><img class="kico" src="./assets/arc/back2.png" /></div>
+          <!-- 中文候选条 -->
+          <div if="{{downFlag==='' && lang==='cn' && !numFlag}}" class="mgl6"
+               style="flex:1;height:52px;background-color:#262626;border:3px solid #333333;border-radius:12px;flex-direction:row;align-items:center;position:relative">
+            <scroll id="cvalWaiting" scroll-x="{{true}}" style="position:absolute;width:85%;height:42px">
+              <div static style="position:absolute;left:0px;height:42px;padding-left:20px;padding-right:20px">
+                <text class="calbtn02" style="padding-right:10px" @click="pushCval">{{cval}}</text>
+                <text for="{{cvalList}}" show="{{resultList.length > $idx}}" class="calbtn02" style="padding-right:10px" @click="onRsSelect(resultList[$idx])">{{resultList[$idx]}}</text>
               </div>
-            </list-item>
-          </list>
-          <div style="position: absolute;top:95px;left:8px;width:464px;height:52px;" show="{{downFlag===''&&!numFlag}}">
-            <img src="./assets/full/Q.png" style="width:54px;height:52px;margin-right: 4px;" @click="onSelect('Q')" />
-            <text class="calbtnfull" for="{{item in keys['full62'][0]}}" @click="onSelect(item)">{{item}}</text>
-            <img src="./assets/full/P.png" style="width:54px;height:52px;" @click="onSelect('P')" />
+            </scroll>
+            <img if="{{resultList.length > 0}}" style="position:absolute;right:8px;width:42px;height:28px;object-fit:contain" src="./assets/arc/down2.png" @click="onBtnClick('down')" />
           </div>
-          <div style="position: absolute;top:152px;left:23px;width:438px;height:52px;" show="{{downFlag===''&&!numFlag}}">
-            <img src="./assets/full/btA.png" style="width:60px;height:52px;margin-right: 4px;" @click="onSelect('A')" />
-            <text class="calbtnfull" for="{{item in keys['full62'][1]}}" @click="onSelect(item)">{{item}}</text>
-            <img src="./assets/full/L.png" style="width:60px;height:52px;" @click="onSelect('L')" />
-          </div>
-          <div style="position: absolute;top:209px;left:56px;width:368px;height:52px;" show="{{downFlag===''&&!numFlag}}">
-            <img src="./assets/full/Z.png" style="width:72px;height:52px;margin-right: 4px;" @click="onSelect('Z')" />
-            <text class="calbtnfull" for="{{item in keys['full62'][2]}}" @click="onSelect(item)">{{item}}</text>
-            <img src="./assets/full/M.png" style="width:72px;height:52px;" @click="onSelect('M')" />
-          </div>
-          <div style="position: absolute;top:95px;left:8px;width:464px;height:52px;" show="{{numFlag && !cursorFlag}}">
-            <img src="./assets/full/1.png" style="width:54px;height:52px;margin-right: 4px;" @click="onSelect('1')" />
-            <text class="calbtnfull" for="{{item in keys['sign62'][0]}}" @click="onSelect(item)">{{item}}</text>
-            <img src="./assets/full/0.png" style="width:54px;height:52px;" @click="onSelect('0')" />
-          </div>
-          <div style="position: absolute;top:152px;left:23px;width:438px;height:52px;" show="{{numFlag && !cursorFlag}}">
-            <img src="./assets/full/2-1.png" style="width:60px;height:52px;margin-right: 4px;" @click="onSelect('~')" />
-            <text class="calbtnfull" for="{{item in keys['sign62'][1]}}" @click="onSelect(item)">{{item}}</text>
-            <img src="./assets/full/2-2.png" style="width:60px;height:52px;" @click="onSelect('?')" />
-          </div>
-          <div style="position: absolute;top:209px;left:56px;width:368px;height:52px;" show="{{numFlag && !cursorFlag}}">
-            <img src="./assets/full/3-1.png" style="width:72px;height:52px;margin-right: 4px;" @click="onSelect('(')" />
-            <text class="calbtnfull" for="{{item in keys['sign62'][2]}}" @click="onSelect(item)">{{item}}</text>
-            <img src="./assets/full/3-2.png" style="width:72px;height:52px;" @click="onSelect('、')" />
-          </div>
-          <!-- cursor键盘布局 -->
-          <div style="position: absolute;top:95px;width:100%;height:52px;justify-content:center" show="{{numFlag && cursorFlag}}">
-            <text class="calbtnfull cursor-btn" style="width:60px;" for="{{item in keys['cursor'][0]}}" @click="onCursorBtn(item)">{{item}}</text>
-          </div>
-          <div style="position: absolute;top:152px;width:100%;height:52px;justify-content:center" show="{{numFlag && cursorFlag}}">
-            <text class="calbtnfull cursor-btn" style="width:60px;" for="{{item in keys['cursor'][1]}}" @click="onCursorBtn(item)">{{item}}</text>
-          </div>
-          <div style="position: absolute;top:209px;width:100%;height:52px;justify-content:center" show="{{numFlag && cursorFlag}}">
-            <text class="calbtnfull cursor-btn" style="width:60px;" for="{{item in keys['cursor'][2]}}" @click="onCursorBtn(item)">{{item}}</text>
-          </div>
-          <img src="./assets/full/del.png" style="position: absolute;top:38px;left:406px;width:67px;height:52px;" @click="onBtnClick('D')" show="{{downFlag==='' && !numFlag }}" />
-          <img src="./assets/full/space.png" style="position: absolute;top:266px;left:242px;width:120px;height:48px;" @click="onBtnClick('space')" show="{{downFlag==='' && !numFlag }}" />
-          <img src="./assets/full/4-2.png" style="position: absolute;top:266px;left:242px;width:120px;height:48px;" @click="onSelect('。')" show="{{numFlag && !cursorFlag}}" />
-          <img src="./assets/full/4-1.png" style="position: absolute;top:266px;left:119px;width:120px;height:48px;" @click="onSelect('，')" show="{{numFlag && !cursorFlag}}" />
-          <img style="position: absolute;top:204px;left:78px;" src="./assets/full/up.png" @click="onBtnClick('down')" show="{{downFlag==='down'}}" />
+          <!-- 英文：大小写 / 数字 / 换行（无候选框，直接显示功能键） -->
+          <div class="sbtn mgl6" if="{{downFlag==='' && upperFlag && lang==='en' && !numFlag}}" @click="onBtnClick('switchLow')"><img class="kico" src="./assets/arc/bigA.png" /></div>
+          <div class="sbtn mgl6" if="{{downFlag==='' && !upperFlag && lang==='en' && !numFlag}}" @click="onBtnClick('switchUpper')"><img class="kico" src="./assets/arc/a.png" /></div>
+          <div class="sbtn mgl6" if="{{downFlag==='' && lang==='en' && !numFlag}}" @click="onBtnClick('switchNum')"><img class="kico" src="./assets/arc/123.png" /></div>
+          <div class="sbtn mgl6" if="{{downFlag==='' && (numFlag || lang==='en')}}" @click="onBtnClick('newline')"><img class="kico" src="./assets/arc/newline.png" /></div>
+          <div class="sbtn mgl6" if="{{numFlag}}" @click="onBtnClick('switchCursor')"><img class="kico" src="./assets/arc/crusor.png" /></div>
+          <div class="sbtn mgl6" @click="onBtnClick('D')"><img class="kico" src="./assets/arc/del.png" /></div>
         </div>
-        <!-- 九键 -->
-        <div else style="width: 480px;height: 321px;">
-          <img src="./assets/t9/back2.png" style="position: absolute;top:35px;left:31px;width: 60px;height: 60px;" @click="onBtnClick('switchCn')" show="{{numFlag}}" />
-          <img src="./assets/t9/123.png" style="position: absolute;top:99px;left:31px;width: 60px;height: 60px;" @click="onBtnClick('switchNum')" show="{{downFlag==='' && !numFlag && lang==='cn'}}" />
-          <img src="./assets/t9/bigA.png" style="position: absolute;top:99px;left:31px;width: 60px;height: 60px;" @click="onBtnClick('switchLow')" show="{{downFlag==='' && !numFlag && upperFlag && lang==='en' && !cursorFlag}}" />
-          <img src="./assets/t9/a.png" style="position: absolute;top:99px;left:31px;width: 60px;height: 60px;" @click="onBtnClick('switchUpper')" show="{{downFlag==='' && !numFlag && !upperFlag && lang==='en' && !cursorFlag}}" />
-          <div style="position: absolute;top:35px;left:95px;width:290px;height:60px;background-color:rgb(38,38,38);border-radius: 999px;border: 3px solid #333333" show="{{downFlag===''&& !numFlag}}"></div>
-          <img show="{{resultList.length > 0}}" style="position: absolute;top:44px;left:338px;" src="./assets/full/down.png" @click="onBtnClick('down')" />
-          <!-- 带变量的相对路径在 aiot-tookit 2.0.4 中修复 -->
-          <img src="./assets/t9/{{lang}}.png" style="position: absolute;top:35px;left:31px;width: 60px;height: 60px;" @click="onBtnClick('lang')" show="{{downFlag==='' && !numFlag}}" />
-          <div style="position: absolute;top:-4px;left:95px;width:145px;height:40px;" show="{{downFlag==='' && !numFlag && cval}}">
-            <text class="caltext" style="width:145px;"> {{cval}}_ </text>
-          </div>
-          <div show="{{downFlag==='' && !numFlag}}" style="position: absolute;top:-4px;left:240px;width:145px;height:40px;justify-content:flex-end">
-            <text for="{{waitingList}}" class="waiting-keys" style="color:{{$idx===waitingIndex ? 'rgb(13,132,255)' : 'white'}};" @click="onSelectWaiting($idx)">{{waitingList[$idx]}}</text>
-          </div>
-          <div style="position: absolute;top:39px;left:105px;width:233px" show="{{lang === 'cn'&& !numFlag}}">
-            <div class="item column center" for="{{cvalList}}">
-              <input show='{{resultList.length > $idx}}' class="calbtn0" type="button" value="{{resultList[$idx]}}" @click="onRsSelect(resultList[$idx])" />
+
+        <!-- 展开候选列表（用 if，避免 show 每次输入都加载全部候选）-->
+        <list class="list3" if="{{downFlag==='down'}}">
+          <list-item type="waitingRows62t9" class="item3" for="{{itemArray in resultList2}}">
+            <div class="item column center" style="height:52px" for="{{item in itemArray}}">
+              <input class="calbtn0" style="width: {{candWidth(item)}}px" type="button" value="{{item}}" @click="onRsSelect(item)" />
             </div>
-          </div>
-          <div style="position: absolute;top:35px;left:95px;width:290px;height:60px;align-content: center;align-items: center;justify-content: center" show="{{downFlag==='' && !numFlag && lang==='en'}}" @click="onBtnClick('switchNum')" >
-            <img src="./assets/full/123_boardless.png" />
-          </div>
-          <!-- 这里使用show会导致每次输入都会加载全部候选列表，很卡 -->
-          <list class="list3" if="{{downFlag==='down'}}">
-            <list-item type="waitingRows62full" class="item3" for="{{itemArray in resultList2}}">
-              <div class="item column center" style="height:52px;" for="{{item in itemArray}}">
-                <input class="calbtn0" type="button" value="{{item}}" @click="onRsSelect(item)" />
-              </div>
-            </list-item>
-          </list>
-          <div style="position: absolute;top:99px;left:95px;width:294px;height:60px;" show="{{downFlag===''&&!numFlag}}">
-            <text class="calbtnt9" @click="onSelect('select')">选择</text>
-            <text class="calbtnt9" for="{{item in keys['t9'][0]}}" @click="onSelect(item)">{{item.toUpperCase()}}</text>
-          </div>
-          <div style="position: absolute;top:163px;left:95px;width:294px;height:60px;" show="{{downFlag===''&&!numFlag}}">
-            <text class="calbtnt9" for="{{item in keys['t9'][1]}}" @click="onSelect(item)">{{item.toUpperCase()}}</text>
-          </div>
-          <div style="position: absolute;top:227px;left:95px;width:294px;height:60px;" show="{{downFlag===''&&!numFlag}}">
-            <text class="calbtnt9" for="{{item in keys['t9'][2]}}" @click="onSelect(item)">{{item.toUpperCase()}}</text>
-          </div>
-          <div style="position: absolute;top:35px;left:95px;width:294px;height:60px;" show="{{numFlag}}">
-            <text class="calbtnt9" @click="onSelect('7')">7</text>
-            <text class="calbtnt9" @click="onSelect('8')">8</text>
-            <text class="calbtnt9" @click="onSelect('9')">9</text>
-          </div>
-          <div style="position: absolute;top:99px;left:95px;width:294px;height:60px;" show="{{numFlag}}">
-            <text class="calbtnt9" @click="onSelect('4')">4</text>
-            <text class="calbtnt9" @click="onSelect('5')">5</text>
-            <text class="calbtnt9" @click="onSelect('6')">6</text>
-          </div>
-          <div style="position: absolute;top:163px;left:95px;width:294px;height:60px;" show="{{numFlag}}">
-            <text class="calbtnt9" @click="onSelect('1')">1</text>
-            <text class="calbtnt9" @click="onSelect('2')">2</text>
-            <text class="calbtnt9" @click="onSelect('3')">3</text>
-          </div>
-          <div style="position: absolute;top:227px;left:95px;width:294px;height:60px;" show="{{numFlag}}">
-            <text class="calbtnt9" @click="onSelect('，')">，</text>
-            <text class="calbtnt9" @click="onSelect('0')">0</text>
-            <text class="calbtnt9" @click="onSelect('。')">。</text>
-          </div>
-          <img src="./assets/t9/del.png" style="position: absolute;top:35px;left:389px;width: 60px;height: 60px;" @click="onBtnClick('D')" show="{{downFlag==='' }}" />
-          <img src="./assets/t9/space.png" style="position: absolute;top:99px;left:389px;width: 60px;height: 60px;" @click="onBtnClick('space')" show="{{downFlag==='' && !numFlag }}" />
-          <img style="position: absolute;top:204px;left:78px;" src="./assets/full/up.png" @click="onBtnClick('down')" show="{{downFlag==='down'}}" />
+          </list-item>
+        </list>
+        <!-- 字母三排（坐标不动） -->
+        <div style="position:absolute;top:95px;left:8px;width:464px;height:52px" show="{{downFlag==='' && !numFlag}}">
+          <img src="./assets/full/Q.png" style="width:54px;height:52px;margin-right:4px" @click="onSelect('Q')" />
+          <text class="calbtnfull" for="{{item in keys['full62'][0]}}" @click="onSelect(item)">{{item}}</text>
+          <img src="./assets/full/P.png" style="width:54px;height:52px" @click="onSelect('P')" />
         </div>
+        <div style="position:absolute;top:152px;left:23px;width:438px;height:52px" show="{{downFlag==='' && !numFlag}}">
+          <img src="./assets/full/btA.png" style="width:60px;height:52px;margin-right:4px" @click="onSelect('A')" />
+          <text class="calbtnfull" for="{{item in keys['full62'][1]}}" @click="onSelect(item)">{{item}}</text>
+          <img src="./assets/full/L.png" style="width:60px;height:52px" @click="onSelect('L')" />
+        </div>
+        <div style="position:absolute;top:209px;left:56px;width:368px;height:52px" show="{{downFlag==='' && !numFlag}}">
+          <img src="./assets/full/Z.png" style="width:72px;height:52px;margin-right:4px" @click="onSelect('Z')" />
+          <text class="calbtnfull" for="{{item in keys['full62'][2]}}" @click="onSelect(item)">{{item}}</text>
+          <img src="./assets/full/M.png" style="width:72px;height:52px" @click="onSelect('M')" />
+        </div>
+        <!-- 符号/数字三排 -->
+        <div style="position:absolute;top:95px;left:8px;width:464px;height:52px" show="{{numFlag && !cursorFlag}}">
+          <img src="./assets/full/1.png" style="width:54px;height:52px;margin-right:4px" @click="onSelect('1')" />
+          <text class="calbtnfull" for="{{item in keys['sign62'][0]}}" @click="onSelect(item)">{{item}}</text>
+          <img src="./assets/full/0.png" style="width:54px;height:52px" @click="onSelect('0')" />
+        </div>
+        <div style="position:absolute;top:152px;left:23px;width:438px;height:52px" show="{{numFlag && !cursorFlag}}">
+          <img src="./assets/full/2-1.png" style="width:60px;height:52px;margin-right:4px" @click="onSelect('~')" />
+          <text class="calbtnfull" for="{{item in keys['sign62'][1]}}" @click="onSelect(item)">{{item}}</text>
+          <img src="./assets/full/2-2.png" style="width:60px;height:52px" @click="onSelect('?')" />
+        </div>
+        <div style="position:absolute;top:209px;left:56px;width:368px;height:52px" show="{{numFlag && !cursorFlag}}">
+          <img src="./assets/full/3-1.png" style="width:72px;height:52px;margin-right:4px" @click="onSelect('(')" />
+          <text class="calbtnfull" for="{{item in keys['sign62'][2]}}" @click="onSelect(item)">{{item}}</text>
+          <img src="./assets/full/3-2.png" style="width:72px;height:52px" @click="onSelect('、')" />
+        </div>
+        <!-- 光标三排 -->
+        <div style="position:absolute;top:95px;width:100%;height:52px;justify-content:center" show="{{numFlag && cursorFlag}}">
+          <text class="calbtnfull cursor-btn" style="width:60px" for="{{item in keys['cursor'][0]}}" @click="onCursorBtn(item)">{{item}}</text>
+        </div>
+        <div style="position:absolute;top:152px;width:100%;height:52px;justify-content:center" show="{{numFlag && cursorFlag}}">
+          <text class="calbtnfull cursor-btn" style="width:60px" for="{{item in keys['cursor'][1]}}" @click="onCursorBtn(item)">{{item}}</text>
+        </div>
+        <div style="position:absolute;top:209px;width:100%;height:52px;justify-content:center" show="{{numFlag && cursorFlag}}">
+          <text class="calbtnfull cursor-btn" style="width:60px" for="{{item in keys['cursor'][2]}}" @click="onCursorBtn(item)">{{item}}</text>
+        </div>
+        <!-- 底排：中文 123（EN 大小写/123 在工具栏）、空格、句号、逗号 -->
+        <img src="./assets/full/123.png" style="position:absolute;top:266px;left:119px;width:120px;height:48px" @click="onBtnClick('switchNum')" show="{{downFlag==='' && !numFlag && lang==='cn'}}" />
+        <img src="./assets/full/space.png" style="position:absolute;top:266px;left:242px;width:120px;height:48px" @click="onBtnClick('space')" show="{{downFlag==='' && !numFlag}}" />
+        <img src="./assets/full/4-2.png" style="position:absolute;top:266px;left:242px;width:120px;height:48px" @click="onSelect('。')" show="{{numFlag && !cursorFlag}}" />
+        <img src="./assets/full/4-1.png" style="position:absolute;top:266px;left:119px;width:120px;height:48px" @click="onSelect('，')" show="{{numFlag && !cursorFlag}}" />
+        <img style="position:absolute;top:204px;left:78px" src="./assets/full/up.png" @click="onBtnClick('down')" show="{{downFlag==='down'}}" />
       </div>
-      <!-- 方屏67 -->
-      <div if="{{screentype==='rect'}}" style="width: 100%;height: 255px;flex-direction: column">
-        <!-- 九键中文 -->
-        <div if="{{keyboardtype=='T9' && !numFlag}}" style="position:absolute;top:-11px;width:100%;height:276px;justify-content: center;">
-          <div style="top:77px;height:189px;width:100%;align-items: stretch;justify-content: space-between;flex-direction: column;padding:6px 3px">
-            <div class="keyboard-rows-rect-t9">
-              <text class="calbtnt9 calbtnt9-rect" @click="onSelect('select')">
-                选择
-                <span if="{{waitingList.length != 0}}" class="waiting-keys" style="color:rgb(13,132,255);" @click="onSelectWaiting(waitingIndex)">
-                  {{waitingList[waitingIndex].toUpperCase()}}
-                </span>
-              </text>
-              <text class="calbtnt9 calbtnt9-rect" for="{{item in keys['t9'][0]}}" @click="onSelect(item)">{{item.toUpperCase()}}</text>
-            </div>
-            <div class="keyboard-rows-rect-t9">
-              <text class="calbtnt9 calbtnt9-rect" for="{{item in keys['t9'][1]}}" @click="onSelect(item)">{{item.toUpperCase()}}</text>
-            </div>
-            <div class="keyboard-rows-rect-t9">
-              <text class="calbtnt9 calbtnt9-rect" for="{{item in keys['t9'][2]}}" @click="onSelect(item)">{{item.toUpperCase()}}</text>
-            </div>
-          </div>
-        </div>
-        <div else style="position:absolute;top:-11px;width:100%;height:276px;justify-content: center">
-          <progress percent="{{percent67}}" style="position:absolute;bottom: 12px;width:80px;color:#ffffff;stroke-width:6px;layer-color:#262626;"></progress>
-          <scroll id="keyboard67" scroll-x="{{true}}" onscroll="handelScroll">
-            <div if="{{!numFlag}}" style="left: 6px; flex-direction: column;">
-              <div static style="margin-left: 0px;margin-top: 0px;height: 60px;">
+
+      <div elif="{{screentype!=='pill-shaped'}}" class="fd" style="width:100%;height:255px;position:relative">
+        <!-- 滚动覆盖层排在工具栏之前，工具栏后渲染盖住它、接收触摸 -->
+        <div style="position:absolute;top:-11px;width:100%;height:276px;justify-content:center">
+          <progress percent="{{percent67}}" style="position:absolute;bottom:12px;width:80px;color:#ffffff;stroke-width:6px;layer-color:#262626"></progress>
+          <scroll id="keyboard67" scroll-x="{{true}}" onscroll="handelScroll" style="padding-left:{{screentype==='circle' ? '56px' : '0px'}};padding-right:{{screentype==='circle' ? '56px' : '0px'}}">
+            <div if="{{!numFlag}}" style="left:6px;flex-direction:column">
+              <div static style="margin-left:0px;margin-top:0px;height:60px">
                 <text class="calbtn67" for="{{item in keys['full'][0]}}" @click="onSelect(item)">{{item}}</text>
               </div>
-              <div static style="margin-left: 32px;margin-top: -5px;height: 60px;">
+              <div static style="margin-left:32px;margin-top:-5px;height:60px">
                 <text class="calbtn67" for="{{item in keys['full'][1]}}" @click="onSelect(item)">{{item}}</text>
               </div>
-              <div static style="margin-left: 64px;margin-top: -5px;height: 60px;">
+              <div static style="margin-left:64px;margin-top:-5px;height:60px">
                 <text class="calbtn67" for="{{item in keys['full'][2]}}" @click="onSelect(item)">{{item}}</text>
-                <img static src="./assets/horizontal/space.png" style="width: 60px;height: 60px;" @click="onBtnClick('space')" />
+                <div static class="tbtn" style="margin-left:4px" @click="onBtnClick('space')"><img class="kico" src="./assets/arc/space.png" /></div>
               </div>
             </div>
-            <div elif="{{numFlag && !cursorFlag}}" style="left: 6px; flex-direction: column;">
-              <div static style="margin-left: 0px;margin-top: 0px;height: 60px;">
+            <div elif="{{numFlag && !cursorFlag}}" style="left:6px;flex-direction:column">
+              <div static style="margin-left:0px;margin-top:0px;height:60px">
                 <text class="calbtn67" for="{{item in keys['sign'][0]}}" @click="onSelect(item)">{{item}}</text>
               </div>
-              <div static style="margin-left: 32px;margin-top: -5px;height: 60px;">
+              <div static style="margin-left:32px;margin-top:-5px;height:60px">
                 <text class="calbtn67" for="{{item in keys['sign'][1]}}" @click="onSelect(item)">{{item}}</text>
               </div>
-              <div static style="margin-left: 64px;margin-top: -5px;height: 60px;">
+              <div static style="margin-left:64px;margin-top:-5px;height:60px">
                 <text class="calbtn67" for="{{item in keys['sign'][2]}}" @click="onSelect(item)">{{item}}</text>
               </div>
             </div>
-            <div else style="width: 100%; flex-direction: column; justify-content: center; align-items: center;">
-              <div static style="margin-top: 0px;height: 60px;justify-content:center">
+            <div else style="width:100%;flex-direction:column;justify-content:center;align-items:center">
+              <div static style="margin-top:0px;height:60px;justify-content:center">
                 <text class="calbtn67 cursor-btn-67" for="{{item in keys['cursor'][0]}}" @click="onCursorBtn(item)">{{item}}</text>
               </div>
-              <div static style="margin-top: -5px;height: 60px;justify-content:center">
+              <div static style="margin-top:-5px;height:60px;justify-content:center">
                 <text class="calbtn67 cursor-btn-67" for="{{item in keys['cursor'][1]}}" @click="onCursorBtn(item)">{{item}}</text>
               </div>
-              <div static style="margin-top: -5px;height: 60px;justify-content:center">
+              <div static style="margin-top:-5px;height:60px;justify-content:center">
                 <text class="calbtn67 cursor-btn-67" for="{{item in keys['cursor'][2]}}" @click="onCursorBtn(item)">{{item}}</text>
               </div>
             </div>
           </scroll>
         </div>
-        <div style="width: 100%; flex-direction: row; justify-content: center; top:6px; padding:0 6px;">
-          <img src="./assets/horizontal/cn.png" style="padding: 6px;width: 60px;height: 60px;" @click="onBtnClick('lang')" if="{{downFlag==='' && !numFlag && lang==='cn'}}" />
-          <div if="{{lang === 'cn' && !numFlag}}" style="margin-left: 6px;flex: 1;height: 60px;background-color:#262626;border-color: #333333; border-width: 3px; border-radius: 100px;flex-direction: row;align-items:center">
-            <scroll id="cvalWaiting" scroll-x="{{true}}" style="position:absolute;width: 85%;height: 42px;">
-              <div static style="position: absolute;left: 0px;height: 42px;padding-left:20px;padding-right:20px">
+        <!-- 顶部工具栏 -->
+        <div class="fr" style="position:relative;top:6px;align-items:center;justify-content:center;padding:0px 6px">
+          <div class="tbtn" if="{{downFlag==='' && !numFlag}}" @click="onBtnClick('lang')"><img class="kico" src="./assets/arc/{{lang}}.png" /></div>
+          <div class="tbtn mgl6" if="{{numFlag}}" @click="onBtnClick('switchCn')"><img class="kico" src="./assets/arc/back2.png" /></div>
+          <!-- 中文候选条 -->
+          <div if="{{downFlag==='' && lang==='cn' && !numFlag}}" class="mgl6"
+               style="flex:1;height:60px;background-color:#262626;border:3px solid #333333;border-radius:100px;flex-direction:row;align-items:center;position:relative">
+            <scroll id="cvalWaiting" scroll-x="{{true}}" style="position:absolute;width:85%;height:42px">
+              <div static style="position:absolute;left:0px;height:42px;padding-left:20px;padding-right:20px">
                 <text class="calbtn02" style="padding-right:10px" @click="pushCval">{{cval}}</text>
                 <text for="{{cvalList}}" show="{{resultList.length > $idx}}" class="calbtn02" style="padding-right:10px" @click="onRsSelect(resultList[$idx])">{{resultList[$idx]}}</text>
               </div>
             </scroll>
-            <img if="{{resultList.length > 0}}" style="position:absolute;right: 8px; width: 60px;height: 40px;" src="./assets/horizontal/down2.png" @click="onBtnClick('down')" />
+            <img if="{{resultList.length > 0}}" style="position:absolute;right:8px;width:42px;height:28px;object-fit:contain" src="./assets/arc/down2.png" @click="onBtnClick('down')" />
           </div>
-        
-          <img src="./assets/horizontal/en.png" style="padding: 6px;width: 60px;height: 60px;" @click="onBtnClick('lang')" if="{{downFlag==='' && !numFlag && lang==='en'}}" />
-          <img src="./assets/horizontal/bigA.png" style="padding: 6px;margin-left: 6px;width:94px;height:60px;" @click="onBtnClick('switchLow')" if="{{downFlag==='' && upperFlag && lang==='en'&& !numFlag}}" />
-          <img src="./assets/horizontal/a.png" style="padding: 6px;margin-left: 6px;width:94px;height:60px;" @click="onBtnClick('switchUpper')" if="{{downFlag==='' && !upperFlag && lang==='en'&& !numFlag}}" />
-          <img src="./assets/horizontal/123.png" style="margin-left: 6px;padding: 6px;margin-left: 6px;width: 94px;height: 60px;" @click="onBtnClick('switchNum')" if="{{downFlag==='' && !numFlag && lang==='en'}}" />
-          <img src="./assets/horizontal/newline.png" style="margin-left: 6px;padding: 6px;width: 60px;height: 60px;" @click="onBtnClick('newline')" if="{{downFlag==='' && !numFlag && lang==='en'}}" />
-          <img src="./assets/horizontal/back2.png" style="margin-left: 6px;padding: 6px;width: 128px;height: 60px;" @click="onBtnClick('switchCn')" if="{{numFlag}}" />
-          <img src="./assets/horizontal/crusor.png" style="margin-left: 6px;padding: 6px;width: 60px;height: 60px;" @click="onBtnClick('switchCursor')" if="{{numFlag}}" />
-          <img if="{{!numFlag}}" src="./assets/horizontal/del.png" style="margin-left: 6px;padding: 6px;width: 60px;height: 60px;" @click="onBtnClick('D')" />
-          <img else src="./assets/horizontal/del2.png" style="margin-left: 6px;padding: 6px;" @click="onBtnClick('D')" />
+          <!-- 英文功能键 -->
+          <div class="tbtn mgl6" if="{{downFlag==='' && upperFlag && lang==='en' && !numFlag}}" @click="onBtnClick('switchLow')"><img class="kico" src="./assets/arc/bigA.png" /></div>
+          <div class="tbtn mgl6" if="{{downFlag==='' && !upperFlag && lang==='en' && !numFlag}}" @click="onBtnClick('switchUpper')"><img class="kico" src="./assets/arc/a.png" /></div>
+          <div class="tbtn mgl6" if="{{downFlag==='' && lang==='en' && !numFlag}}" @click="onBtnClick('switchNum')"><img class="kico" src="./assets/arc/123.png" /></div>
+          <div class="tbtn mgl6" if="{{downFlag==='' && (numFlag || lang==='en')}}" @click="onBtnClick('newline')"><img class="kico" src="./assets/arc/newline.png" /></div>
+          <div class="tbtn mgl6" if="{{numFlag}}" @click="onBtnClick('switchCursor')"><img class="kico" src="./assets/arc/crusor.png" /></div>
+          <div class="tbtn mgl6" @click="onBtnClick('D')"><img class="kico" src="./assets/arc/del.png" /></div>
         </div>
-        <!-- 这里使用show会导致每次输入都会加载全部候选列表，很卡 -->
-        <div style="position: absolute;left: 0px;top: 0px;width: 100%;height: 252px;background-color: black; justify-content:center; flex-direction:column; align-items:center" if="{{downFlag==='down'}}">
+        <!-- 展开候选全屏层 -->
+        <div if="{{downFlag==='down'}}" style="position:absolute;left:0px;top:0px;width:100%;height:252px;background-color:black;justify-content:center;flex-direction:column;align-items:center">
           <div static class="list67">
-            <list static style="width:100%;height:100%;">
+            <list static style="width:100%;height:100%">
               <list-item type="waitingRows67" class="item67" for="{{itemArray in resultList2}}">
                 <div class="item column center" for="{{item in itemArray}}">
                   <input class="calbtn02" type="button" value="{{item}}" @click="onRsSelect(item)" />
@@ -242,67 +159,79 @@
               </list-item>
             </list>
           </div>
-          <img static style="margin-top:5px" src="./assets/horizontal/up2.png" @click="onBtnClick('down')" />
+          <img static style="margin-top:5px;width:80px;height:60px;object-fit:contain" src="./assets/arc/up2.png" @click="onBtnClick('down')" />
         </div>
       </div>
-      <!-- 胶囊屏66 -->
-      <div if="{{screentype==='pill-shaped'}}" style="width: 100%;height: 305px">
-        <div static style="position:absolute;left:0px;top:34px;width:100%;height:276px;">
-          <progress percent="{{30+percent66}}" type="arc" style="start-angle:204deg;total-angle:-48deg;width:188px;height:188px;top:82px;left:2px;position:absolute;color:#ffffff;stroke-width:6px;layer-color:#262626;margin-left: {{(screenWidth - 192)/2}}px;"></progress>
-          <scroll id="keyboard66" scroll-x="{{true}}" onscroll="handelScroll" style="padding-left: {{(screenWidth - 192)/2}}px;padding-right: {{(screenWidth - 192)/2}}px;">
-            <div if="{{!numFlag}}" style="left: 3px; flex-direction: column;">
-              <div static style="margin-left: 0px;margin-top: 0px;height: 60px;">
+
+      <div else style="width:100%;height:305px">
+        <!-- 弧形横向键位滚动区 -->
+        <div static style="position:absolute;left:0px;top:34px;width:100%;height:276px">
+          <scroll id="keyboard66" scroll-x="{{true}}" onscroll="handelScroll" style="padding-left:{{(global.Screen.screenWidth - 192)/2}}px;padding-right:{{(global.Screen.screenWidth - 192)/2}}px">
+            <div if="{{!numFlag}}" style="left:3px;flex-direction:column">
+              <div static style="margin-left:0px;margin-top:0px;height:60px">
                 <text class="calbtn66" for="{{item in keys['full'][0]}}" @click="onSelect(item)">{{item}}</text>
               </div>
-              <div static style="margin-left: 32px;margin-top: -5px;height: 60px;">
+              <div static style="margin-left:32px;margin-top:-5px;height:60px">
                 <text class="calbtn66" for="{{item in keys['full'][1]}}" @click="onSelect(item)">{{item}}</text>
               </div>
-              <div static style="margin-left: 64px;margin-top: -5px;height: 60px;">
+              <div static style="margin-left:64px;margin-top:-5px;height:60px">
                 <text class="calbtn66" for="{{item in keys['full'][2]}}" @click="onSelect(item)">{{item}}</text>
-                <img static src="./assets/arc/space.png" style="width: 60px;height: 60px;" @click="onBtnClick('space')" />
+                <div static class="tbtn" style="margin-left:3px" @click="onBtnClick('space')"><img class="kico" src="./assets/arc/space.png" /></div>
               </div>
             </div>
-            <div else style="left: 3px; flex-direction: column;">
-              <div static style="margin-left: 0px;margin-top: 0px;height: 60px;">
+            <div elif="{{numFlag && !cursorFlag}}" style="left:3px;flex-direction:column">
+              <div static style="margin-left:0px;margin-top:0px;height:60px">
                 <text class="calbtn66" for="{{item in keys['sign'][0]}}" @click="onSelect(item)">{{item}}</text>
               </div>
-              <div static style="margin-left: 32px;margin-top: -5px;height: 60px;">
+              <div static style="margin-left:32px;margin-top:-5px;height:60px">
                 <text class="calbtn66" for="{{item in keys['sign'][1]}}" @click="onSelect(item)">{{item}}</text>
               </div>
-              <div static style="margin-left: 64px;margin-top: -5px;height: 60px;">
+              <div static style="margin-left:64px;margin-top:-5px;height:60px">
                 <text class="calbtn66" for="{{item in keys['sign'][2]}}" @click="onSelect(item)">{{item}}</text>
+              </div>
+            </div>
+            <div else style="left:3px;flex-direction:column;align-items:center">
+              <div static style="margin-top:0px;height:60px">
+                <text class="calbtn66 cursor-btn-67" for="{{item in keys['cursor'][0]}}" @click="onCursorBtn(item)">{{item}}</text>
+              </div>
+              <div static style="margin-top:-5px;height:60px">
+                <text class="calbtn66 cursor-btn-67" for="{{item in keys['cursor'][1]}}" @click="onCursorBtn(item)">{{item}}</text>
+              </div>
+              <div static style="margin-top:-5px;height:60px">
+                <text class="calbtn66 cursor-btn-67" for="{{item in keys['cursor'][2]}}" @click="onCursorBtn(item)">{{item}}</text>
               </div>
             </div>
           </scroll>
         </div>
-        <div static style="position: absolute;left: {{(screenWidth - 192)/2}}px;top: 0px;width: 192px;height: 110px;"> 
-          <img static style="position: absolute;left: 3px;top: 47px;width: 186px;height: 60px;" src="./assets/arc/search.png" />
-          <scroll id="cvalWaiting" scroll-x="{{true}}" style="position: absolute;left: 15px;top: 56px;width: 144px;height: 42px;">
-            <div style="position: absolute;left: 0px;top: 0px;height: 42px;padding-right:20px">
+        <!-- 顶部固定弧形工具条（原 192 样式，全部 arc） -->
+        <div static style="position:absolute;left:{{(global.Screen.screenWidth - 192)/2}}px;top:0px;width:192px;height:110px">
+          <img static style="position:absolute;left:3px;top:47px;width:186px;height:60px" src="./assets/arc/search.png" />
+          <scroll id="cvalWaiting" scroll-x="{{true}}" style="position:absolute;left:15px;top:56px;width:144px;height:42px">
+            <div style="position:absolute;left:0px;top:0px;height:42px;padding-right:20px">
               <text class="calbtn02" style="padding-right:10px" @click="pushCval">{{cval}}</text>
               <text for="{{cvalList}}" show="{{resultList.length > $idx}}" class="calbtn02" style="padding-right:10px" @click="onRsSelect(resultList[$idx])">{{resultList[$idx]}}</text>
             </div>
           </scroll>
-          <img show="{{resultList.length > 0}}" style="position: absolute;left: 120px;top: 57px;width: 60px;height: 40px;" src="./assets/arc/down2.png" @click="onBtnClick('down')" />
-          <!-- 带变量的相对路径在 aiot-tookit 2.0.4 中修复 -->
-          <img src="./assets/arc/{{lang}}.png" style="position: absolute;top:0px;left:9px;width: 48px;height: 42px;" @click="onBtnClick('lang')" show="{{downFlag==='' && !numFlag}}" />
-          <img src="./assets/arc/back2.png" style="position: absolute;top:0px;left:9px;width: 48px;height: 42px;" @click="onBtnClick('switchCn')" show="{{numFlag && lang==='cn'}}" />
-          <img src="./assets/arc/123.png" style="position: absolute;left: 70px;top: 0px;width: 52px;height: 42px;" @click="onBtnClick('switchNum')" show="{{downFlag==='' && !numFlag && lang==='cn'}}" />
-          <img src="./assets/arc/bigA.png" style="position: absolute;top:0px;left:72px;width:48px;height:42px;" @click="onBtnClick('switchLow')" show="{{downFlag==='' && upperFlag && lang==='en'}}" />
-          <img src="./assets/arc/a.png" style="position: absolute;top:0px;left:72px;width:48px;height:42px;" @click="onBtnClick('switchUpper')" show="{{downFlag==='' && !upperFlag && lang==='en'}}" />
-          <img src="./assets/arc/del.png" style="position: absolute;left: 135px;top: 0px;width: 48px;height: 42px;" @click="onBtnClick('D')" />
+          <img show="{{resultList.length > 0}}" style="position:absolute;left:120px;top:57px;width:60px;height:40px;object-fit:contain" src="./assets/arc/down2.png" @click="onBtnClick('down')" />
+          <img src="./assets/arc/{{lang}}.png" style="position:absolute;top:0px;left:9px;width:48px;height:42px" @click="onBtnClick('lang')" show="{{downFlag==='' && !numFlag}}" />
+          <img src="./assets/arc/back2.png" style="position:absolute;top:0px;left:9px;width:48px;height:42px" @click="onBtnClick('switchCn')" show="{{numFlag && lang==='cn'}}" />
+          <img src="./assets/arc/123.png" style="position:absolute;left:70px;top:0px;width:52px;height:42px" @click="onBtnClick('switchNum')" show="{{downFlag==='' && !numFlag && lang==='cn'}}" />
+          <img src="./assets/arc/bigA.png" style="position:absolute;top:0px;left:72px;width:48px;height:42px" @click="onBtnClick('switchLow')" show="{{downFlag==='' && upperFlag && lang==='en'}}" />
+          <img src="./assets/arc/a.png" style="position:absolute;top:0px;left:72px;width:48px;height:42px" @click="onBtnClick('switchUpper')" show="{{downFlag==='' && !upperFlag && lang==='en'}}" />
+          <img src="./assets/arc/crusor.png" style="position:absolute;top:0px;left:70px;width:52px;height:42px;object-fit:contain" @click="onBtnClick('switchCursor')" show="{{numFlag}}" />
+          <img src="./assets/arc/del.png" style="position:absolute;left:135px;top:0px;width:48px;height:42px" @click="onBtnClick('D')" />
         </div>
-        <!-- 这里使用show会导致每次输入都会加载全部候选列表，很卡 -->
-        <div style="position: absolute;top: 47px;width: 100%;height: 263px;background-color: black;" if="{{downFlag==='down'}}">
-          <div style="position: absolute;left: {{(screenWidth - 192)/2}}px;width: 192px;height: 263px;"> 
+        <!-- 展开候选全屏层 -->
+        <div style="position:absolute;top:47px;width:100%;height:263px;background-color:black" if="{{downFlag==='down'}}">
+          <div style="position:absolute;left:{{(global.Screen.screenWidth - 192)/2}}px;width:192px;height:263px">
             <list static class="list66">
               <list-item type="waitingRows66" class="item66" for="{{itemArray in resultList2}}">
                 <div class="item column center" for="{{item in itemArray}}">
-                  <input class="calbtn0" type="button" value="{{item}}" @click="onRsSelect(item)" />
+                  <input class="calbtn0" style="width: {{candWidth(item)}}px" type="button" value="{{item}}" @click="onRsSelect(item)" />
                 </div>
               </list-item>
             </list>
-            <img static style="position: absolute;top:196px;left:56px;width: 80px;height: 60px;" src="./assets/arc/up2.png" @click="onBtnClick('down')" />
+            <img static style="position:absolute;top:196px;left:56px;width:80px;height:60px" src="./assets/arc/up2.png" @click="onBtnClick('down')" />
           </div>
         </div>
       </div>
@@ -312,16 +241,55 @@
 
 <script>
 import vibrator from "@system.vibrator";
-import device from '@system.device'
-import { SimpleInputMethod } from "./assets/dicUtil.js";
-function doSearchDic(word, cb) {
-  let hanzi = SimpleInputMethod.getHanzi(word);
-  if (hanzi && hanzi[0]) {
-    cb(hanzi[0]);
-  } else {
-    cb([]);
-  }
+import file from '@system.file'
+import { createIME } from "./assets/engine.js";
+import * as core from "./assets/ime_core.js";
+const ime = createIME(core);
+
+const DICT_PATH = "/components/InputMethod/assets/dictionary/";
+
+const shardCache = {};
+
+function readShard(letter) {
+  return new Promise(resolve => {
+    if (typeof file === 'undefined' || !file.readText) { resolve(null); return }
+    try {
+      file.readText({
+        uri: DICT_PATH + 'p_' + letter + '.txt',
+        encoding: 'UTF-8',
+        success: data => {
+          const txt = typeof data === 'string' ? data : (data && data.text)
+          if (!txt) { resolve(null); return }
+          let obj
+          try { obj = JSON.parse(txt) } catch (e) { resolve(null); return }
+          const rg = ime.rangeOf(letter)
+          if (!rg || !obj || !obj.d) { resolve(null); return }
+          resolve({ data: obj.d, len: obj.l, lo: rg[0], hi: rg[1] })
+        },
+        fail: () => resolve(null),
+      })
+    } catch (e) {
+      resolve(null)
+    }
+  })
 }
+
+ime.attachPhraseLoader(async gid => {
+  const letter = ime.letterOf(gid)
+  if (!letter) return null
+  if (shardCache[letter] !== undefined) return shardCache[letter]
+  let rec = null
+  try {
+    rec = await readShard(letter)
+  } catch (e) {
+    rec = null
+  }
+  shardCache[letter] = rec
+  return rec
+});
+
+const CAND_LIMIT = 30;
+
 function deleteLast(t) {
   if (t) {
     return t.substr(0, t.length - 1);
@@ -333,8 +301,9 @@ export default {
     hide: {
       default: true,
     },
-    keyboardtype: {
-      default: "QWERTY",
+    // 圆屏键盘形态：'normal' = 经典绝对定位键盘；其它任意值（如 'QWERTY'）= 横向滚动键盘
+    circlemode: {
+      default: "normal",
     },
     maxlength: {
       default: 5,
@@ -350,9 +319,6 @@ export default {
     cval: "",
     resultList: [],
     resultList2: [],
-    waitingList: [],
-    waitingIndex: -1,
-    lastWaitingStr: "",
     downFlag: "",
     lang: "cn",
     numFlag: false,
@@ -361,9 +327,6 @@ export default {
     cvalList: [0, 1, 2, 3, 4],
     percent67: 52,
     percent66: 0,
-    // 针对screenShape为rect的设备，会自动获取screenWidth并绑定到根div
-    // 这样便能同时适配n67和o65甚至是后续设备，但实际效果可能受designWidth影响
-    screenWidth: 336,
     keys: {
       full: [
         ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
@@ -385,11 +348,6 @@ export default {
         ["S", "D", "F", "G", "H", "J", "K"],
         ["X", "C", "V", "B", "N"],
       ],
-      t9: [
-        ["abc", "def"],
-        ["ghi", "jkl", "mno"],
-        ["pqrs", "tuv", "wxyz"],
-      ],
       cursor: [
         ["复制", "↑", "粘贴"],
         ["←", "选择", "→"],
@@ -405,9 +363,6 @@ export default {
       }
       this.cvalList = tempCvalList;
     }
-    if (this.screentype === "rect" || this.screentype === "pill-shaped") {
-      this.adjustScreenWidth();
-    }
     this.$watch("hide", "watchHidePropsChange");
     this.$watch("maxlength", "watchMaxLengthPropsChange");
   },
@@ -416,18 +371,18 @@ export default {
   },
   onRsSelect(txt) {
     this.onVibrate();
-    this.cval = "";
+    const py = this.currentPinyin();
+    const n = (txt || "").length;
     this.addAllTxt(txt);
-    this.clearWaiting();
-    this.resetReslutList();
+    this.cval = n > 0 ? ime.remaining(py, n) : "";
     this.downFlag = "";
+    this.resetReslutList();
   },
   onBtnClick(sign) {
     this.onVibrate();
     switch (sign) {
       case "AC":
         this.cval = "";
-        this.clearWaiting();
         this.resetReslutList();
         break;
       case "lang":
@@ -437,14 +392,10 @@ export default {
           this.lang = "cn";
         }
         this.cval = "";
-        this.clearWaiting();
         this.resetReslutList();
         break;
       case "D":
-        if (this.waitingIndex >= 0) {
-          this.clearWaiting();
-          this.resetReslutList();
-        } else if (this.cval.length > 0) {
+        if (this.cval.length > 0) {
           this.cval = deleteLast(this.cval);
           this.resetReslutList();
         } else {
@@ -456,26 +407,15 @@ export default {
         break;
       case "down":
         this.downFlag = this.downFlag === "down" ? "" : "down";
-        break;
-      case "select":
-        if (this.lastWaitingStr != sign && this.lastWaitingStr) {
-          if (this.lang === "cn") {
-            this.cval += this.waitingList[this.waitingIndex];
-          } else {
-            if (this.upperFlag) {
-              this.addAllTxt(this.waitingList[this.waitingIndex].toUpperCase());
-            } else {
-              this.addAllTxt(this.waitingList[this.waitingIndex].toLowerCase());
-            }
-          }
-          this.clearWaiting();
-          this.resetReslutList();
+        if (this.downFlag === "down") {
+          this.setResultListAll();
+        } else {
+          this.resultList2 = [];
         }
         break;
       case "switchNum":
         this.numFlag = true;
         this.cval = "";
-        this.clearWaiting();
         this.resetReslutList();
         break;
       case "switchCn":
@@ -497,64 +437,44 @@ export default {
       default:
         if (sign.length === 1) {
           this.addAllTxt(sign);
-        } else {
-          if (this.waitingIndex >= 0) {
-            if (this.lastWaitingStr === sign) {
-              this.waitingIndex++;
-              if (this.waitingIndex >= this.lastWaitingStr.length) {
-                this.waitingIndex = 0;
-              }
-            } else {
-              if (this.lang === "cn") {
-                this.cval += this.waitingList[this.waitingIndex];
-              } else {
-                if (this.upperFlag) {
-                  this.addAllTxt(
-                    this.waitingList[this.waitingIndex].toUpperCase(),
-                  );
-                } else {
-                  this.addAllTxt(
-                    this.waitingList[this.waitingIndex].toLowerCase(),
-                  );
-                }
-              }
-              this.lastWaitingStr = sign;
-              this.waitingIndex = 0;
-              this.waitingList = sign.split("");
-            }
-          } else {
-            this.lastWaitingStr = sign;
-            this.waitingIndex = 0;
-            this.waitingList = sign.split("");
-          }
-          this.resetReslutList();
         }
         break;
     }
   },
-  clearWaiting() {
-    this.waitingList = [];
-    this.waitingIndex = -1;
-    this.lastWaitingStr = "";
+  candWidth(word) {
+    const n = (word || "").length;
+    if (n <= 1) return 52;
+    return 26 + 26 * n;
   },
-  resetReslutList() {
-    if (this.screentype != "circle") {
-      this.$element("cvalWaiting").scrollTo({
+  currentPinyin() {
+    return this.cval;
+  },
+  async resetReslutList() {
+    const cvalScroll = this.$element("cvalWaiting");
+    if (cvalScroll) {
+      cvalScroll.scrollTo({
         top: 0,
         left: 0,
         behavior: "smooth",
       });
     }
-    let watingStr = "";
-    if (this.lastWaitingStr && this.lastWaitingStr[this.waitingIndex]) {
-      watingStr = this.lastWaitingStr[this.waitingIndex];
-    }
-    if (!(this.cval + watingStr) || this.lang != "cn") {
+    const py = this.currentPinyin();
+    if (!py || this.lang != "cn") {
       this.resultList = [];
-      this.setResultListAll();
+      this.resultList2 = [];
       return;
     }
-    this.getResultByWord(this.cval + watingStr);
+    const seg = ime.segment(py);
+    if (seg.ids.length >= 1 && (seg.ids.length > 1 || seg.partial)) {
+      await ime.ensureGroup(seg.ids[0]);
+    }
+    const r = ime.query(py, CAND_LIMIT);
+    this.resultList = r.candidates;
+    if (this.downFlag === "down") {
+      this.setResultListAll();
+    } else {
+      this.resultList2 = [];
+    }
   },
   setResultListAll() {
     this.resultList2 = [];
@@ -570,19 +490,8 @@ export default {
       this.resultList2.push(array);
     }
   },
-  getResultByWord(val) {
-    const that = this;
-    doSearchDic(val, function (data) {
-      that.resultList = data;
-      that.setResultListAll();
-    });
-  },
   onSelect(num) {
     this.$emit("keyDown", { content: num });
-    if (this.keyboardtype === "T9" && this.screentype !== "pill-shaped") {
-      this.onBtnClick(num);
-      return;
-    }
     this.onVibrate();
     if (this.lang === "cn" && !this.numFlag) {
       this.cval += num.toLowerCase();
@@ -595,20 +504,6 @@ export default {
     } else {
       this.addAllTxt(num);
     }
-    this.resetReslutList();
-  },
-  onSelectWaiting(num) {
-    this.onVibrate();
-    if (this.lang === "cn") {
-      this.cval += this.waitingList[num].toString();
-    } else {
-      if (this.upperFlag) {
-        this.addAllTxt(this.waitingList[num].toUpperCase());
-      } else {
-        this.addAllTxt(this.waitingList[num].toLowerCase());
-      }
-    }
-    this.clearWaiting();
     this.resetReslutList();
   },
   watchHidePropsChange(newV) {
@@ -638,16 +533,8 @@ export default {
     this.onVibrate();
     let temp = this.cval;
     this.cval = "";
-    this.clearWaiting();
     this.resetReslutList();
     this.addAllTxt(temp);
-  },
-  adjustScreenWidth(){
-    device.getInfo({
-      success: (data) => {
-        this.screenWidth = data.screenWidth;
-      }
-    })
   },
   onCursorBtn(action) {
     this.onVibrate()
@@ -693,10 +580,46 @@ export default {
 	left:0;
 	bottom:0
 }
+
+/* 圆屏方角键外框（52 高） */
+.sbtn {
+	width:60px;
+	height:52px;
+	padding:7px;
+	background-color:#262626;
+	border:3px solid rgba(255,255,255,0.06);
+	border-radius:12px;
+	flex-direction:row;
+	align-items:center;
+	justify-content:center;
+	flex-shrink:0
+}
+/* 滚动键盘圆角键外框（60 圆） */
+.tbtn {
+	width:60px;
+	height:60px;
+	padding:9px;
+	background-color:#262626;
+	border:3px solid rgba(255,255,255,0.06);
+	border-radius:30px;
+	flex-direction:row;
+	align-items:center;
+	justify-content:center;
+	flex-shrink:0
+}
+/* 键内图标：填满内容区并按比例缩放，不变形 */
+.kico {
+	width:100%;
+	height:100%;
+	object-fit:contain
+}
+
+/* 圆屏62 候选词条目 */
 .item {
 	height:52px;
 	flex:1
 }
+/* 候选词按钮：透明底无边框 */
 .calbtn0 {
 	color:#fff;
 	font-size:28px;
@@ -706,6 +629,7 @@ export default {
 	width:52px;
 	text-align:center
 }
+/* 候选条候选：32号字、42高，透明底 */
 .calbtn02 {
 	color:rgb(255,255,255);
 	background-color:rgba(38,38,38,0);
@@ -714,6 +638,7 @@ export default {
 	text-align:center;
 	height:42px;
 }
+/* 圆屏62 字母/符号键 */
 .calbtnfull {
 	color:#fff;
 	font-size:24px;
@@ -726,30 +651,7 @@ export default {
 	text-align:center;
 	border:3px solid rgba(255,255,255,0.06)
 }
-.calbtnt9 {
-	color:#fff;
-	font-size:25px;
-	font-weight:bold;
-	background-color:#262626;
-	border-radius:999px;
-	margin-right:4px;
-	width:94px;
-	height:60px;
-	text-align:center;
-	border:3px solid rgba(255,255,255,0.06)
-}
-.caltext {
-	text-align:left;
-	line-height:38px;
-	lines:1;
-	text-overflow:ellipsis;
-	color:#0d84ff;
-	height:45px;
-	font-size:28px;
-	text-align:left;
-	font-weight:bold;
-	padding-left:8px
-}
+/* 圆屏62 展开候选悬浮列表 */
 .list3 {
 	position:absolute;
 	top:38px;
@@ -764,6 +666,7 @@ export default {
 	width:324px;
 	height:52px
 }
+/* 横向滚动键盘圆形键 */
 .calbtn67 {
 	color:rgb(255,255,255);
 	font-size:32px;
@@ -783,25 +686,7 @@ export default {
 	width:100%;
 	height:170px;
 }
-#keyboard66 {
-	position:absolute;
-	left:0px;
-	top:82px;
-	width:100%;
-	height:170px;
-}
-.list67 {
-	top:0px;
-	width:96.4%;
-	height:170px;
-	border-radius:30px;
-	background-color:#262626;
-	border:3px solid rgba(255,255,255,0.06);
-	padding:0px 10px;
-}
-.item67 {
-	height:50px;
-}
+/* 胶囊66 圆形键（右边距 3px） */
 .calbtn66 {
 	color:rgb(255,255,255);
 	font-size:32px;
@@ -814,6 +699,27 @@ export default {
 	text-align:center;
 	border:3px solid rgba(255,255,255,0.06);
 }
+#keyboard66 {
+	position:absolute;
+	left:0px;
+	top:82px;
+	width:100%;
+	height:170px;
+}
+/* 滚动键盘展开候选列表 */
+.list67 {
+	top:0px;
+	width:96.4%;
+	height:170px;
+	border-radius:30px;
+	background-color:#262626;
+	border:3px solid rgba(255,255,255,0.06);
+	padding:0px 10px;
+}
+.item67 {
+	height:50px;
+}
+/* 胶囊66 展开候选弧形面板 */
 .list66 {
 	position:absolute;
 	left:3px;
@@ -828,33 +734,12 @@ export default {
 .item66 {
 	height:42px;
 }
-.waiting-keys {
-	width:36px;
-	height:40px;
-	text-align: center;
-}
 
+/* 光标键盘功能键字号 */
 .cursor-btn {
 	font-size: 20px;
 }
-
 .cursor-btn-67 {
 	font-size: 22px;
-}
-
-.keyboard-rows-rect-t9 { 
-  align-items: center;
-  justify-content: space-between;
-  flex-direction: row;
-  flex-shrink: 0;
-  height: 55px;
-  width: 100%;
-}
-
-.calbtnt9-rect { 
-  flex:1;
-  height: 55px;
-  margin: 0 3px;
-  width: unset;
 }
 </style>
