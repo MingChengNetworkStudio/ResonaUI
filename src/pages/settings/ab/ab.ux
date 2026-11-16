@@ -33,6 +33,10 @@
             <text class="ab-text">{{devinfo.versionName}}</text>
           </div>
           <div class="info-box">
+            <text class="ab-title">框架版本</text>
+            <text class="ab-text">{{resonaVersion}}</text>
+          </div>
+          <div class="info-box">
             <text class="ab-title">版本代号</text>
             <text class="ab-text">xxxx</text>
           </div>
@@ -69,12 +73,14 @@
 
 <script>
 import { getDeviceInfo } from '../../../common/js/useful.js'
+import { RESONA_UI_VERSION } from '../../../common/js/version.js'
 
 export default {
   private: {
 
     foottext: '',
     devinfo: {},
+    resonaVersion: '',
 
     scrclass: '',
     NowTime: '',
@@ -92,6 +98,7 @@ export default {
     global.uiAdm.registerPage(this.$page.name, this);
     this.foottext = this.Saying[Math.floor(Math.random() * this.Saying.length)]
     this.devinfo = await getDeviceInfo()
+    this.resonaVersion = RESONA_UI_VERSION
     this.NowTime = global.NowHour + ':' + global.NowMin
   },
   onBackPress() { this.back(); return true; },
